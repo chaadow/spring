@@ -42,7 +42,7 @@ module Spring
         if alive?
           begin
             yield
-          rescue Errno::ECONNRESET, Errno::EPIPE
+          rescue Errno::ECONNRESET, Errno::EPIPE, Errno::EINVAL
             # The child has died but has not been collected by the wait thread yet,
             # so start a new child and try again.
             log "child dead; starting"
@@ -126,7 +126,8 @@ module Spring
         # as if it does we're no longer interested in the child
         loop do
           IO.select([child])
-          break if child.recv(1, Socket::MSG_PEEK).empty?
+          peek = child.recv(1, Socket::MSG_PEEK)
+          break if peek.nil? || peek.empty?
           sleep 0.01
         end
 
